@@ -22,6 +22,29 @@ import {
   serializeModelCapabilityOverrides,
   type ModelCapabilityOverride,
 } from "../shared/model-capabilities.ts";
+import {
+  MEDIA_PROVIDER_KEY_PAIRS,
+  poolKeyNameFor,
+  apiKeyNameForPool,
+} from "../shared/provider-keys.ts";
+export {
+  MEDIA_PROVIDER_KEY_PAIRS,
+  poolKeyNameFor,
+  apiKeyNameForPool,
+} from "../shared/provider-keys.ts";
+import {
+  normalizeKeyPool,
+  setConfiguredKeyPool,
+  getKeyPoolSummary,
+  getNextKey,
+  type KeyPoolSummary,
+} from "./key-pool.ts";
+export {
+  normalizeKeyPool,
+  setConfiguredKeyPool,
+  getKeyPoolSummary,
+  type KeyPoolSummary,
+} from "./key-pool.ts";
 
 const ACTIVE_PROFILE = runtimeProfile();
 const ENV_PATH = ACTIVE_PROFILE.keystorePath;
@@ -88,6 +111,38 @@ export function seedKeystore(env: Record<string, string>): void {
     envSeeded.add(target);
   }
   seedLegacyModelCapabilities(env);
+  for (const preset of LLM_PROVIDER_PRESETS) {
+    syncProviderKeyPool(preset.id);
+  }
+  for (const pair of MEDIA_PROVIDER_KEY_PAIRS) {
+    syncKeyPool(pair.poolKey, pair.apiKey);
+  }
+}
+
+/** Synchronizes in-memory and persisted key pool state for a key pool. */
+export function syncKeyPool(poolKey: string, singleKey?: string): string[] {
+  const poolRaw = store.get(poolKey) ?? "";
+  const singleName = singleKey || apiKeyNameForPool(poolKey);
+  const singleRaw = singleName ? (store.get(singleName) ?? "") : "";
+  const poolKeys = normalizeKeyPool(poolRaw);
+  const singleKeys = normalizeKeyPool(singleRaw);
+  const combined = [...new Set([...poolKeys, ...singleKeys])];
+  setConfiguredKeyPool(poolKey, combined);
+  return combined;
+}
+
+/** Synchronizes in-memory and persisted key pool state for a provider. */
+export function syncProviderKeyPool(provider: string): string[] {
+  const names = llmProviderConfigNames(provider);
+  const combined = syncKeyPool(names.keyPool, names.apiKey);
+  setConfiguredKeyPool(provider, combined);
+  return combined;
+}
+
+/** Returns the active configured key pool for a provider or pool key. */
+export function getKeyPool(providerOrPool: string): string[] {
+  const isLlm = LLM_PROVIDER_PRESETS.some((p) => p.id === providerOrPool);
+  return isLlm ? syncProviderKeyPool(providerOrPool) : syncKeyPool(providerOrPool);
 }
 
 /**
@@ -124,8 +179,16 @@ export function planLegacyLlmMigration(
   return plan;
 }
 
-/** Live value for a key (runtime override wins over the .env.local seed). '' if unset. */
+/** Live value for a key (runtime override wins over the .env.local seed). '' if unset.
+ * If a multi-key pool is configured for this credential, returns the active sticky key from the pool. */
 export function getKey(name: KeyName): string {
+  const poolKey = poolKeyNameFor(name);
+  if (poolKey) {
+    const pool = getNextKey(poolKey);
+    if (pool.currentKey) {
+      return pool.currentKey;
+    }
+  }
   return store.get(name) ?? "";
 }
 
@@ -153,7 +216,10 @@ export function computeCaps(): Caps {
       has("MINIMAX_API_KEY") ||
       has("WAVESPEED_API_KEY") ||
       has("BYTEPLUS_API_KEY") ||
-      has("FAL_KEY"),
+      has("FAL_KEY") ||
+      has("HIVE_API_KEY") ||
+      has("MERGE_GATEWAY_API_KEY") ||
+      has("VERCEL_IMAGE_KEY"),
     voice:
       (has("DOUBAO_TTS_APP_ID") && has("DOUBAO_TTS_ACCESS_KEY")) ||
       has("ELEVENLABS_API_KEY") ||
@@ -205,6 +271,7 @@ export interface KeyStatus {
   keys: Record<string, KeyState>;
   caps: Caps;
   models: Record<string, string>;
+  keyPools?: Record<string, KeyPoolSummary>;
 }
 
 /** Browser-facing status. SECURITY INVARIANT: a SECRET key's value (any name not in
@@ -222,7 +289,16 @@ export function keyStatus(): KeyStatus {
     };
     if (NON_SECRET_NAMES.has(name)) models[name] = getKey(name);
   }
-  return { keys, caps: computeCaps(), models };
+  const keyPools: Record<string, KeyPoolSummary> = {};
+  for (const preset of LLM_PROVIDER_PRESETS) {
+    keyPools[preset.id] = getKeyPoolSummary(preset.id);
+    const names = llmProviderConfigNames(preset.id);
+    keyPools[names.keyPool] = getKeyPoolSummary(names.keyPool);
+  }
+  for (const pair of MEDIA_PROVIDER_KEY_PAIRS) {
+    keyPools[pair.poolKey] = getKeyPoolSummary(pair.poolKey);
+  }
+  return { keys, caps: computeCaps(), models, keyPools };
 }
 
 /** Apply key edits from the settings UI: validate, update memory, persist to .env.local.
@@ -258,5 +334,16 @@ export async function setKeys(patch: Record<string, unknown>): Promise<void> {
       envSeeded.delete(name);
     } // now a runtime value
     else store.delete(name);
+  }
+  for (const preset of LLM_PROVIDER_PRESETS) {
+    const names = llmProviderConfigNames(preset.id);
+    if (clean.has(names.keyPool) || clean.has(names.apiKey)) {
+      syncProviderKeyPool(preset.id);
+    }
+  }
+  for (const pair of MEDIA_PROVIDER_KEY_PAIRS) {
+    if (clean.has(pair.poolKey) || clean.has(pair.apiKey)) {
+      syncKeyPool(pair.poolKey, pair.apiKey);
+    }
   }
 }

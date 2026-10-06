@@ -227,3 +227,121 @@ export async function callGrokImageProvider(baseUrl: string, apiKey: string, mod
   if (!result.data?.length) throw new Error('grok-imagine returned no images');
   return result.data;
 }
+
+export const ALLOWED_HIVE_SIZES: ReadonlyArray<readonly [number, number]> = [
+  [1344, 768],
+  [1280, 960],
+  [1024, 1024],
+  [960, 1280],
+  [768, 1344],
+];
+
+export function snapToHiveSize(width: number, height: number): [number, number] {
+  if (ALLOWED_HIVE_SIZES.some(([w, h]) => w === width && h === height)) {
+    return [width, height];
+  }
+  const targetRatio = width / (height || 1);
+  let best = ALLOWED_HIVE_SIZES[2];
+  let minDiff = Infinity;
+  for (const size of ALLOWED_HIVE_SIZES) {
+    const diff = Math.abs(size[0] / size[1] - targetRatio);
+    if (diff < minDiff) {
+      minDiff = diff;
+      best = size;
+    }
+  }
+  return [best[0], best[1]];
+}
+
+export async function callHiveProvider(baseUrl: string, apiKey: string, model: string, body: {
+  prompt: string;
+  count: number;
+  width?: number;
+  height?: number;
+  steps?: number;
+  seed?: number;
+  outputFormat?: string;
+}): Promise<ProviderImage[]> {
+  const [snappedWidth, snappedHeight] = snapToHiveSize(body.width || 1024, body.height || 1024);
+  const endpoint = baseUrl.includes('/api/v3/hive')
+    ? baseUrl
+    : `${baseUrl.replace(/\/$/, '')}/api/v3/hive/${model || 'flux-schnell-enhanced'}`;
+  const payload: Record<string, unknown> = {
+    input: {
+      prompt: body.prompt,
+      image_size: { width: snappedWidth, height: snappedHeight },
+      num_inference_steps: body.steps ?? 15,
+      num_images: body.count,
+      output_format: body.outputFormat === 'jpeg' ? 'jpeg' : 'png',
+    },
+  };
+  if (body.seed != null) {
+    (payload.input as Record<string, unknown>).seed = body.seed;
+  }
+  const response = await fetchWithProxy(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await imageProviderError(response));
+  const result = await response.json() as { output?: Array<{ url?: string }> };
+  if (!result.output?.length) throw new Error('Hive returned no images');
+  return result.output.map((item) => ({ url: item.url }));
+}
+
+export async function callMergeGatewayProvider(baseUrl: string, apiKey: string, model: string, body: {
+  prompt: string;
+  count: number;
+  width?: number;
+  height?: number;
+  quality?: string;
+}): Promise<ProviderImage[]> {
+  const endpoint = baseUrl.endsWith('/images/generations')
+    ? baseUrl
+    : `${baseUrl.replace(/\/$/, '')}/images/generations`;
+  const adjWidth = Math.max(16, Math.round((body.width || 1024) / 16) * 16);
+  const adjHeight = Math.max(16, Math.round((body.height || 1024) / 16) * 16);
+  const quality = body.quality === 'medium' || body.quality === 'low' ? body.quality : 'high';
+  const payload = {
+    model: model || 'openai/gpt-image-2.5-sunburst',
+    prompt: body.prompt,
+    n: body.count,
+    size: `${adjWidth}x${adjHeight}`,
+    quality,
+  };
+  const response = await fetchWithProxy(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await imageProviderError(response));
+  const result = await response.json() as { data?: ProviderImage[] };
+  if (!result.data?.length) throw new Error('Merge Gateway returned no images');
+  return result.data;
+}
+
+export async function callVercelImageProvider(baseUrl: string, apiKey: string, model: string, body: {
+  prompt: string;
+  count: number;
+  width?: number;
+  height?: number;
+}): Promise<ProviderImage[]> {
+  const endpoint = baseUrl.endsWith('/images/generations')
+    ? baseUrl
+    : `${baseUrl.replace(/\/$/, '')}/images/generations`;
+  const payload = {
+    model: model || 'bytedance/seedream-5.0-pro',
+    prompt: body.prompt,
+    n: body.count,
+    size: `${body.width || 1024}x${body.height || 1024}`,
+  };
+  const response = await fetchWithProxy(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+    body: JSON.stringify(payload),
+  });
+  if (!response.ok) throw new Error(await imageProviderError(response));
+  const result = await response.json() as { data?: ProviderImage[] };
+  if (!result.data?.length) throw new Error('Vercel AI Gateway returned no images');
+  return result.data;
+}

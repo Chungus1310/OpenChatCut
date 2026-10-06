@@ -6,11 +6,11 @@ import { MINIMAX_LANGUAGE_BOOSTS } from '../../../shared/media-provider-params';
 export const GENERATE_TOOL_SCHEMAS: AgentToolSchema[] = [
   {
     name: 'submit_image',
-    description: 'Generate one or more AI images (Fal catalog, gpt-image-2, nano-banana, MiniMax image-01, WaveSpeed, BytePlus Seedream, or xAI Grok Imagine), save them to the project media pool, and optionally propose adding them to the active timeline. Call only when the user explicitly requested the generation.',
+    description: 'Generate one or more AI images (Fal catalog, gpt-image-2, nano-banana, MiniMax image-01, WaveSpeed, BytePlus Seedream, xAI Grok Imagine, TheHive AI Flux Schnell, Merge AI Gateway, or Vercel AI Gateway), save them to the project media pool, and optionally propose adding them to the active timeline. Call only when the user explicitly requested the generation.',
     input_schema: {
       type: 'object',
       properties: {
-        model: { type: 'string', enum: ['gpt-image-2', 'nano-banana', 'image-01', 'wavespeed', 'byteplus', 'grok-imagine', 'fal'], description: 'gpt-image-2 is the default; nano-banana is best for reference-heavy work; image-01 is MiniMax (at most 9 outputs; one subject reference when R2 is configured); wavespeed is WaveSpeed AI (fast generic image models, no references); byteplus is BytePlus ModelArk Seedream (no references yet); grok-imagine is xAI Grok Imagine (text-to-image only, no references, at most 4 outputs, 1K/2K).' },
+        model: { type: 'string', enum: ['gpt-image-2', 'nano-banana', 'image-01', 'wavespeed', 'byteplus', 'grok-imagine', 'fal', 'thehiveai', 'hive', 'merge-gateway', 'merge', 'vercel'], description: 'gpt-image-2 is the default; nano-banana is best for reference-heavy work; image-01 is MiniMax; wavespeed is WaveSpeed AI; byteplus is BytePlus ModelArk Seedream; grok-imagine is xAI Grok Imagine; thehiveai/hive is TheHive AI Flux Schnell; merge/merge-gateway is Merge AI Gateway (gpt-image-2.5-sunburst); vercel is Vercel AI Gateway (Seedream 5.0 pro, Recraft, Flux 2 max).' },
         falModel: { type: 'string', enum: FAL_IMAGE_MODELS.map((model) => model.id), description: `With model=fal, select a curated Fal image model; omitted uses the saved Fal image default. ${FAL_IMAGE_MODELS.map((model) => `${model.id}: ${falModelSummary(model)}`).join('; ')}. Model-specific limits are validated before submission.` },
         prompt: { type: 'string', description: 'Detailed description of the image to generate.' },
         name: { type: 'string', description: 'Short descriptive asset name shown in the media pool.' },

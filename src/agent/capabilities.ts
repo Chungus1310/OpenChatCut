@@ -60,6 +60,9 @@ interface ProviderRow { label: string; arg: string; argKey: 'model' | 'provider'
 const CAP_PROVIDERS: Partial<Record<CapabilityKey, ProviderRow[]>> = {
   image: [
     { label: 'Fal.ai', arg: 'fal', argKey: 'model', need: [['FAL_KEY']] },
+    { label: 'TheHive AI', arg: 'thehiveai', argKey: 'model', need: [['HIVE_API_KEY']] },
+    { label: 'Merge Gateway', arg: 'merge', argKey: 'model', need: [['MERGE_GATEWAY_API_KEY']] },
+    { label: 'Vercel Gateway', arg: 'vercel', argKey: 'model', need: [['VERCEL_IMAGE_KEY']] },
     { label: 'gpt-image', arg: 'gpt-image-2', argKey: 'model', need: [['IMAGE_API_KEY'], ['OPENAI_API_KEY']] },
     { label: 'Nano Banana', arg: 'nano-banana', argKey: 'model', need: [['GEMINI_API_KEY']] },
     { label: 'MiniMax', arg: 'image-01', argKey: 'model', need: [['MINIMAX_API_KEY']] },

@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import { validateImageRequest } from './image.ts';
-import { callGrokImageProvider } from './image-provider-clients.ts';
+import {
+  callGrokImageProvider,
+  callHiveProvider,
+  callMergeGatewayProvider,
+  callVercelImageProvider,
+} from './image-provider-clients.ts';
 
 const basic = validateImageRequest({ prompt: 'a cat' });
 assert.equal(basic.model, 'gpt-image-2');
@@ -113,17 +118,75 @@ assert.throws(
   /custom width\/height are not supported/,
 );
 
+const hiveReq = validateImageRequest({ model: 'thehiveai', prompt: 'stone wall', width: 1024, height: 1024 });
+assert.equal(hiveReq.model, 'thehiveai');
+assert.equal(hiveReq.width, 1024);
+assert.equal(hiveReq.height, 1024);
+
+const mergeReq = validateImageRequest({ model: 'merge', prompt: 'golden clock', quality: 'high', width: 1024, height: 1024 });
+assert.equal(mergeReq.model, 'merge');
+assert.equal(mergeReq.quality, 'high');
+
+const vercelReq = validateImageRequest({ model: 'vercel', prompt: 'futuristic city', imageSize: '1K' });
+assert.equal(vercelReq.model, 'vercel');
+
 const originalFetch = globalThis.fetch;
 let grokRequest: Record<string, unknown> | null = null;
+let hiveRequest: Record<string, unknown> | null = null;
+let mergeRequest: Record<string, unknown> | null = null;
+let vercelRequest: Record<string, unknown> | null = null;
+
 globalThis.fetch = (async (_input: RequestInfo | URL, init?: RequestInit) => {
-  grokRequest = JSON.parse(String(init?.body)) as Record<string, unknown>;
+  const url = String(_input);
+  const body = init?.body ? JSON.parse(String(init.body)) : null;
+  if (url.includes('thehive.ai')) {
+    hiveRequest = body;
+    return new Response(JSON.stringify({ output: [{ url: 'https://example.com/hive.png' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  if (url.includes('api-gateway.merge.dev')) {
+    mergeRequest = body;
+    return new Response(JSON.stringify({ data: [{ b64_json: 'aGVsbG8=' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  if (url.includes('ai-gateway.vercel.sh')) {
+    vercelRequest = body;
+    return new Response(JSON.stringify({ data: [{ url: 'https://example.com/vercel.png' }] }), {
+      headers: { 'content-type': 'application/json' },
+    });
+  }
+  grokRequest = body;
   return new Response(JSON.stringify({ data: [{ b64_json: 'aGVsbG8=' }] }), {
     headers: { 'content-type': 'application/json' },
   });
 }) as typeof fetch;
+
 await callGrokImageProvider('https://api.x.ai/v1', 'test-key', 'grok-imagine-image', {
   prompt: 'portrait', count: 1, aspectRatio: '9:16', imageSize: '2K',
 });
+
+const hiveImages = await callHiveProvider('https://api.thehive.ai/api/v3/hive/flux-schnell-enhanced', 'test-hive-key', 'flux-schnell-enhanced', {
+  prompt: 'textured stone', count: 1, width: 1024, height: 1024,
+});
+assert.equal(hiveImages.length, 1);
+assert.equal((hiveRequest as any)?.input?.prompt, 'textured stone');
+assert.equal((hiveRequest as any)?.input?.image_size?.width, 1024);
+
+const mergeImages = await callMergeGatewayProvider('https://api-gateway.merge.dev/v1/images/generations', 'test-merge-key', 'openai/gpt-image-2.5-sunburst', {
+  prompt: 'golden clock', count: 1, width: 1024, height: 1024, quality: 'medium',
+});
+assert.equal(mergeImages.length, 1);
+assert.equal((mergeRequest as any)?.model, 'openai/gpt-image-2.5-sunburst');
+assert.equal((mergeRequest as any)?.quality, 'medium');
+
+const vercelImages = await callVercelImageProvider('https://ai-gateway.vercel.sh/v1/images/generations', 'test-vercel-key', 'bytedance/seedream-5.0-pro', {
+  prompt: 'city view', count: 1, width: 1344, height: 768,
+});
+assert.equal(vercelImages.length, 1);
+assert.equal((vercelRequest as any)?.model, 'bytedance/seedream-5.0-pro');
+
 globalThis.fetch = originalFetch;
-assert.equal(grokRequest?.aspect_ratio, '9:16', 'Grok receives the requested aspect ratio');
+assert.equal((grokRequest as any)?.aspect_ratio, '9:16', 'Grok receives the requested aspect ratio');
 console.log('image.check: ok (provider-specific official parameters)');

@@ -14,9 +14,11 @@ import { ClaudeCodeVendorPane } from './ClaudeCodeVendorPane';
 import { FalModelNote } from './FalModelNote';
 import { shouldRenderModelPicker } from './codexReasoning';
 import { llmProviderConfigNames, normalizeLlmProvider } from '../../../shared/llm-providers';
+import { poolKeyNameFor } from '../../../shared/provider-keys';
 import { MODEL_CAPABILITY_OVERRIDES_KEY } from '../../../shared/model-capabilities';
 import { CopilotVendorPane } from './CopilotVendorPane';
 import { ModelCapabilityEditor } from './ModelCapabilityEditor';
+import { KeyPoolEditor } from './KeyPoolEditor';
 import { XaiOauthVendorPane } from './XaiOauthVendorPane';
 import { VisionModelPane } from './VisionModelPane';
 import { LocalAsrPane } from './LocalAsrPane';
@@ -106,6 +108,32 @@ export function VendorPane({ page, hint, ctx }: {
           {page.fields.map((f) => <FieldRow key={f.name} field={f} ctx={ctx} />)}
         </div>
         <FalModelNote page={page} status={ctx.status} values={ctx.values} />
+        {page.key.startsWith('llm/') && !page.connection && (
+          <KeyPoolEditor
+            provider={normalizeLlmProvider(page.vendor)}
+            keyPoolName={llmProviderConfigNames(page.vendor).keyPool}
+            apiKeyName={llmProviderConfigNames(page.vendor).apiKey}
+            status={ctx.status}
+            stagedValue={ctx.values[llmProviderConfigNames(page.vendor).keyPool]}
+            onStage={ctx.onStage}
+          />
+        )}
+        {!page.key.startsWith('llm/') && page.fields
+          .filter((f) => f.kind === 'secret' && poolKeyNameFor(f.name) !== null)
+          .map((f) => {
+            const poolKey = poolKeyNameFor(f.name)!;
+            return (
+              <KeyPoolEditor
+                key={poolKey}
+                provider={poolKey}
+                keyPoolName={poolKey}
+                apiKeyName={f.name}
+                status={ctx.status}
+                stagedValue={ctx.values[poolKey]}
+                onStage={ctx.onStage}
+              />
+            );
+          })}
         {page.key.startsWith('llm/') && (
           <ModelCapabilityEditor backend="api" provider={normalizeLlmProvider(page.vendor)}
             modelId={apiModelId(page, ctx)} rawOverrides={capabilityOverridesValue(ctx)}

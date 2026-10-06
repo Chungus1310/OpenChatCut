@@ -239,9 +239,16 @@ export const TRANSCRIPTION_SETTINGS_GROUP: SettingsGroup = {
 
 export const ROUTE_NEEDS: Record<string, readonly (readonly string[])[]> = {
   fal: [['FAL_KEY']],
+  thehiveai: [['HIVE_API_KEY']],
+  hive: [['HIVE_API_KEY']],
+  merge: [['MERGE_GATEWAY_API_KEY']],
+  'merge-gateway': [['MERGE_GATEWAY_API_KEY']],
+  vercel: [['VERCEL_IMAGE_KEY']],
   'gpt-image-2': [['IMAGE_API_KEY'], ['OPENAI_API_KEY']],
   'nano-banana': [['GEMINI_API_KEY']],
   'image-01': [['MINIMAX_API_KEY']],
+  wavespeed: [['WAVESPEED_API_KEY']],
+  byteplus: [['BYTEPLUS_API_KEY']],
   'grok-imagine': [['LLM_XAI_OAUTH_API_KEY'], ['LLM_XAI_API_KEY']],
   'grok-imagine-video': [['LLM_XAI_OAUTH_API_KEY'], ['LLM_XAI_API_KEY']],
   ofox: [['LLM_OFOX_API_KEY']],

@@ -161,6 +161,33 @@ export function serverPlugins(options: { projectStoreHttp?: boolean } = {}): Plu
       get xaiImageModel() {
         return getKey("XAI_IMAGE_MODEL") || "grok-imagine-image-2.0";
       },
+      get hiveBaseUrl() {
+        return getKey("HIVE_BASE_URL") || "https://api.thehive.ai";
+      },
+      get hiveApiKey() {
+        return getKey("HIVE_API_KEY");
+      },
+      get hiveModel() {
+        return getKey("HIVE_IMAGE_MODEL") || "flux-schnell-enhanced";
+      },
+      get mergeGatewayBaseUrl() {
+        return getKey("MERGE_GATEWAY_BASE_URL") || "https://api-gateway.merge.dev/v1";
+      },
+      get mergeGatewayApiKey() {
+        return getKey("MERGE_GATEWAY_API_KEY");
+      },
+      get mergeGatewayModel() {
+        return getKey("MERGE_GATEWAY_IMAGE_MODEL") || "openai/gpt-image-2.5-sunburst";
+      },
+      get vercelBaseUrl() {
+        return getKey("VERCEL_IMAGE_BASE_URL") || "https://ai-gateway.vercel.sh/v1";
+      },
+      get vercelApiKey() {
+        return getKey("VERCEL_IMAGE_KEY");
+      },
+      get vercelModel() {
+        return getKey("VERCEL_IMAGE_MODEL") || "bytedance/seedream-5.0-pro";
+      },
     }),
     voiceGenerationPlugin({
       get elevenBaseUrl() {

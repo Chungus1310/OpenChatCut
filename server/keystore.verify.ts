@@ -160,6 +160,9 @@ const MODEL_ROUTING_NAMES = [
   'WAVESPEED_IMAGE_MODEL', 'BYTEPLUS_IMAGE_MODEL', 'BYTEPLUS_VIDEO_MODEL',
   'XAI_IMAGE_MODEL', 'XAI_VIDEO_MODEL', 'OFOX_VIDEO_MODEL',
   'INWORLD_TTS_MODEL', 'FISHAUDIO_TTS_MODEL', 'SPEECHIFY_TTS_MODEL',
+  'HIVE_BASE_URL', 'HIVE_IMAGE_MODEL',
+  'MERGE_GATEWAY_BASE_URL', 'MERGE_GATEWAY_IMAGE_MODEL',
+  'VERCEL_IMAGE_BASE_URL', 'VERCEL_IMAGE_MODEL',
   'PREFERRED_IMAGE_VENDOR', 'PREFERRED_VOICE_VENDOR', 'PREFERRED_VIDEO_VENDOR', 'PREFERRED_MUSIC_VENDOR',
   'PREFERRED_TRANSCRIPTION_PROVIDER', 'TRANSCRIPTION_LANGUAGE', 'TRANSCRIPTION_DIARIZATION', 'AUTO_TRANSCRIBE_INGEST', 'UI_SCALE', 'UI_SCALE_BASE', 'UI_LOCALE',
   'LOCAL_ASR_MODEL', // On-device ASR model tier: '' | tiny | base | small | medium
@@ -207,5 +210,20 @@ seedKeystore({
 const migrated = parseModelCapabilityOverrides(keyStatus().models[MODEL_CAPABILITY_OVERRIDES_KEY]);
 assert.deepEqual(migrated.find((record) => record.modelId === 'custom/migrated')?.contextWindowTokens, 65_536,
   'legacy provider context migrates to the exact selected model identity');
+
+// ── Universal multi-API key rotation and pool verification for media & LLM providers ──
+seedKeystore({
+  ...isolatedSeed,
+  FAL_KEY_POOL: '["fal-pool-key-1", "fal-pool-key-2"]',
+  ELEVENLABS_KEY_POOL: '["el-1", "el-2"]',
+} as Record<string, string>);
+const multiStatus = keyStatus();
+assert.equal(multiStatus.caps.image, true, 'fal key pool enables image capability');
+assert.equal(multiStatus.caps.voice, true, 'elevenlabs key pool enables voice capability');
+assert.equal(getKey('FAL_KEY'), 'fal-pool-key-1', 'getKey resolves active sticky key from pool');
+assert.equal(getKey('ELEVENLABS_API_KEY'), 'el-1', 'getKey resolves active sticky key from elevenlabs pool');
+assert.ok(multiStatus.keyPools?.['FAL_KEY_POOL'], 'FAL_KEY_POOL summary is surfaced in status');
+assert.equal(multiStatus.keyPools?.['FAL_KEY_POOL']?.totalKeys, 3, '3 keys reported (2 from pool + 1 from previously seeded FAL_KEY)');
+assert.ok(!JSON.stringify(multiStatus).includes('fal-pool-key-1'), 'key pool secrets NEVER leak into status JSON');
 
 console.log('keystore.verify: ok');

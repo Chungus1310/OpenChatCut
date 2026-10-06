@@ -37,6 +37,8 @@ export interface ProxyRoute {
   forceJsonContentType?: boolean;
   /** Replace upstream error bodies with one actionable message. */
   errorMessage?: (status: number, req: IncomingMessage) => string;
+  /** Optional response callback evaluated after receiving status from upstream. */
+  onResponse?: (status: number, req: IncomingMessage) => void;
 }
 
 export function proxyMiddleware(route: ProxyRoute): Middleware {
@@ -83,6 +85,7 @@ export function proxyMiddleware(route: ProxyRoute): Middleware {
       ...(agent ? { agent } : {}),
     }, (upRes) => {
       const status = upRes.statusCode ?? 502;
+      route.onResponse?.(status, req);
       if (status >= 400 && route.errorMessage) {
         const chunks: Buffer[] = [];
         upRes.on('data', (chunk) => chunks.push(chunk));
@@ -109,6 +112,7 @@ export function proxyMiddleware(route: ProxyRoute): Middleware {
     });
 
     upstream.on('error', (err) => {
+      route.onResponse?.(502, req);
       if (!res.headersSent) {
         res.writeHead(502, { 'Content-Type': 'application/json' });
         res.end(JSON.stringify({ error: `upstream request failed: ${err.message}` }));

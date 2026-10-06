@@ -11,6 +11,8 @@ import { resolveLlmProviderConfig } from '../llm-config.ts';
 import { xaiOauthAccessToken } from '../xai-oauth-session.ts';
 import { proxyMiddleware } from '../proxy.ts';
 
+import { getNextKey, markKeySuccess, markKeyFailure } from '../key-pool.ts';
+
 function keyReader(name: string): string {
   return getKey(name as KeyName);
 }
@@ -25,18 +27,21 @@ export function llmTarget(req?: IncomingMessage): string {
 }
 
 export function llmHeaders(req?: IncomingMessage): Record<string, string> {
-  const config = resolveLlmProviderConfig(llmProviderForRequest(req), keyReader);
+  const provider = llmProviderForRequest(req);
+  const config = resolveLlmProviderConfig(provider, keyReader);
   if (config.provider === 'xai-oauth') {
     // OAuth requests only trust the active in-memory session. API-key accounts
     // use the separate xai provider and LLM_XAI_API_KEY slot.
     const token = xaiOauthAccessToken();
     return token ? { authorization: `Bearer ${token}` } : {};
   }
-  if (!config.apiKey) return {};
+  const pool = getNextKey(provider);
+  const apiKey = pool.currentKey || config.apiKey;
+  if (!apiKey) return {};
   const protocol = protocolForProvider(config.provider);
-  if (protocol === 'anthropic') return { 'x-api-key': config.apiKey, 'anthropic-version': '2023-06-01' };
-  if (protocol === 'google') return { 'x-goog-api-key': config.apiKey };
-  return { authorization: `Bearer ${config.apiKey}` };
+  if (protocol === 'anthropic') return { 'x-api-key': apiKey, 'anthropic-version': '2023-06-01' };
+  if (protocol === 'google') return { 'x-goog-api-key': apiKey };
+  return { authorization: `Bearer ${apiKey}` };
 }
 
 export function llmErrorMessage(status: number, req?: IncomingMessage): string {
@@ -82,6 +87,19 @@ export function llmProxyPlugin(): Plugin {
         headers: llmHeaders,
         forceJsonContentType: true,
         errorMessage: llmErrorMessage,
+        onResponse(status, req) {
+          try {
+            const provider = llmProviderForRequest(req);
+            const pool = getNextKey(provider);
+            if (status < 400) {
+              markKeySuccess(provider, pool.currentIndex);
+            } else if (status === 401 || status === 402 || status === 403 || status === 429 || status >= 500) {
+              markKeyFailure(provider, pool.currentIndex, new Error(`HTTP ${status}`));
+            }
+          } catch {
+            // ignore
+          }
+        },
       }));
     },
   };

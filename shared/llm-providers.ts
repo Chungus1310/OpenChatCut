@@ -6,7 +6,7 @@ export type LlmProtocol = 'anthropic' | 'openai' | 'google' | 'openai-compatible
 export type OpenAiApiMode = 'responses' | 'chat';
 export const DEFAULT_OPENAI_API_MODE: OpenAiApiMode = 'responses';
 
-interface LlmProviderPreset {
+export interface LlmProviderPreset {
   readonly id: string;
   readonly label: string;
   readonly protocol: LlmProtocol;
@@ -173,6 +173,7 @@ export const DEFAULT_LLM_PROVIDER: LlmProvider = 'anthropic';
 
 export interface LlmProviderConfigNames {
   readonly apiKey: string;
+  readonly keyPool: string;
   readonly baseUrl: string;
   readonly model: string;
   readonly legacyContextWindow: string;
@@ -209,6 +210,7 @@ export function llmProviderConfigNames(provider: unknown): LlmProviderConfigName
   const token = normalizeLlmProvider(provider).replace(/-/g, '_').toUpperCase();
   return {
     apiKey: `LLM_${token}_API_KEY`,
+    keyPool: `LLM_${token}_KEY_POOL`,
     baseUrl: `LLM_${token}_BASE_URL`,
     model: `LLM_${token}_MODEL`,
     legacyContextWindow: `LLM_${token}_CONTEXT_WINDOW`,

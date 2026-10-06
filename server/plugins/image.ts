@@ -16,7 +16,10 @@ import {
   callByteplusImageProvider,
   callGeminiProvider,
   callGrokImageProvider,
+  callHiveProvider,
+  callMergeGatewayProvider,
   callMinimaxProvider,
+  callVercelImageProvider,
   callWaveSpeedProvider,
   imageMimeType,
   imageProviderError,
@@ -55,6 +58,15 @@ interface ImagePluginOptions {
   xaiBaseUrl: string;
   xaiApiKey: string;
   xaiImageModel: string;
+  hiveBaseUrl: string;
+  hiveApiKey: string;
+  hiveModel: string;
+  mergeGatewayBaseUrl: string;
+  mergeGatewayApiKey: string;
+  mergeGatewayModel: string;
+  vercelBaseUrl: string;
+  vercelApiKey: string;
+  vercelModel: string;
 }
 
 interface ImageRequest {
@@ -80,7 +92,7 @@ interface ImageRequest {
 }
 
 export interface ValidImageRequest {
-  model: 'gpt-image-2' | 'nano-banana' | 'image-01' | 'wavespeed' | 'byteplus' | 'grok-imagine' | 'fal';
+  model: 'gpt-image-2' | 'nano-banana' | 'image-01' | 'wavespeed' | 'byteplus' | 'grok-imagine' | 'thehiveai' | 'hive' | 'merge-gateway' | 'merge' | 'vercel' | 'fal';
   falModel?: string;
   falInput?: FalCatalogInput;
   prompt: string;
@@ -137,13 +149,18 @@ function validateGptOptions(input: ImageRequest, hasReferences: boolean) {
 
 function rejectForeignImageOptions(input: ImageRequest, model: ValidImageRequest['model']) {
   if (model !== 'gpt-image-2') {
-    const gptOnly = [input.maskPath, input.background, input.moderation, input.inputFidelity, input.outputFormat, input.outputCompression, input.quality];
+    const gptOnly = [input.maskPath, input.background, input.moderation, input.inputFidelity, input.outputFormat, input.outputCompression];
+    if (model !== 'merge-gateway' && model !== 'merge') {
+      gptOnly.push(input.quality);
+    }
     if (gptOnly.some((value) => value != null)) throw new Error(`GPT Image options are not supported by ${model}`);
   }
   if (model !== 'image-01' && input.promptOptimizer != null) {
     throw new Error('promptOptimizer is supported by image-01 (MiniMax) only');
   }
-  if (model !== 'image-01' && input.seed != null) throw new Error('seed is supported by image-01 (MiniMax) only');
+  if (model !== 'image-01' && input.seed != null && model !== 'thehiveai' && model !== 'hive') {
+    throw new Error('seed is not supported by this model');
+  }
 }
 
 /** Pure request validation — exported for unit checks. */
@@ -164,7 +181,12 @@ export function validateImageRequest(input: ImageRequest): ValidImageRequest {
       referencePaths: input.referencePaths ?? [], aspectRatio: input.aspectRatio ?? '16:9',
       imageSize: input.imageSize ?? '1K', quality: 'high', outputFormat: 'png' };
   }
-  if (model !== 'gpt-image-2' && model !== 'nano-banana' && model !== 'image-01' && model !== 'wavespeed' && model !== 'byteplus' && model !== 'grok-imagine') {
+  if (
+    model !== 'gpt-image-2' && model !== 'nano-banana' && model !== 'image-01' &&
+    model !== 'wavespeed' && model !== 'byteplus' && model !== 'grok-imagine' &&
+    model !== 'thehiveai' && model !== 'hive' && model !== 'merge-gateway' &&
+    model !== 'merge' && model !== 'vercel'
+  ) {
     throw new Error(`unsupported model ${model}`);
   }
   const prompt = String(input.prompt ?? '').trim();
@@ -424,6 +446,21 @@ export function imageGenerationPlugin(options: ImagePluginOptions): Plugin {
           } else if (model === 'grok-imagine') {
             images = await callGrokImageProvider(options.xaiBaseUrl, options.xaiApiKey, options.xaiImageModel, {
               prompt, count, aspectRatio, imageSize,
+            });
+          } else if (model === 'thehiveai' || model === 'hive') {
+            if (!options.hiveApiKey) throw new Error('TheHive AI is not configured. Set HIVE_API_KEY in .env.local or settings.');
+            images = await callHiveProvider(options.hiveBaseUrl, options.hiveApiKey, options.hiveModel, {
+              prompt, count, width, height, seed, outputFormat,
+            });
+          } else if (model === 'merge-gateway' || model === 'merge') {
+            if (!options.mergeGatewayApiKey) throw new Error('Merge AI Gateway is not configured. Set MERGE_GATEWAY_API_KEY in .env.local or settings.');
+            images = await callMergeGatewayProvider(options.mergeGatewayBaseUrl, options.mergeGatewayApiKey, options.mergeGatewayModel, {
+              prompt, count, width, height, quality,
+            });
+          } else if (model === 'vercel') {
+            if (!options.vercelApiKey) throw new Error('Vercel AI Gateway is not configured. Set VERCEL_IMAGE_KEY in .env.local or settings.');
+            images = await callVercelImageProvider(options.vercelBaseUrl, options.vercelApiKey, options.vercelModel, {
+              prompt, count, width, height,
             });
           } else {
             if (!options.apiKey) throw new Error('Image generation is not configured. Set IMAGE_API_KEY or OPENAI_API_KEY in .env.local.');

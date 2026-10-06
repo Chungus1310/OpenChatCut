@@ -255,4 +255,17 @@ assert.equal(falVideo.falModel, 'seedance-2.5');
 assert.deepEqual(falVideo.refImages, ['asset-1']);
 assert.equal(falVideo.durationSeconds, undefined, 'preserve model defaults');
 assert.throws(() => buildSubmitVideoArgs({ model: 'fal', mode: 'pro' }), /mode/);
+const hiveImage = buildSubmitImageArgs({ model: 'thehiveai', prompt: 'stone wall', name: 'wall', width: 1024, height: 1024 });
+assert.equal(hiveImage.model, 'thehiveai');
+assert.equal(hiveImage.width, 1024);
+assert.equal(hiveImage.height, 1024);
+
+const mergeImage = buildSubmitImageArgs({ model: 'merge', prompt: 'golden clock', name: 'clock', quality: 'high' });
+assert.equal(mergeImage.model, 'merge');
+assert.equal(mergeImage.quality, 'high');
+
+const vercelImage = buildSubmitImageArgs({ model: 'vercel', prompt: 'futuristic city', name: 'city', imageSize: '1K' });
+assert.equal(vercelImage.model, 'vercel');
+assert.equal(vercelImage.imageSize, '1K');
+
 console.log('generation-tool-input.verify: ok');

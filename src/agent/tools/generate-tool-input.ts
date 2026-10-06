@@ -40,6 +40,9 @@ export function buildSubmitImageArgs(args: GenerateArgs): SubmitImageArgs {
   }
   if (model === 'nano-banana') return { ...shared, imageSize: args.imageSize as SubmitImageArgs['imageSize'] };
   if (model === 'wavespeed' || model === 'byteplus') return { ...shared, imageSize: args.imageSize as SubmitImageArgs['imageSize'], width, height };
+  if (model === 'thehiveai' || model === 'hive' || model === 'merge-gateway' || model === 'merge' || model === 'vercel') {
+    return { ...shared, imageSize: args.imageSize as SubmitImageArgs['imageSize'], width, height, quality: args.quality as SubmitImageArgs['quality'] };
+  }
   const outputFormat = args.outputFormat as SubmitImageArgs['outputFormat'];
   return {
     ...shared, imageSize: args.imageSize as SubmitImageArgs['imageSize'], width, height,

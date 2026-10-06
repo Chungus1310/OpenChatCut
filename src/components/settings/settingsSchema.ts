@@ -107,6 +107,9 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
       { key: 'image', title: '生图', hint: 'submit_image · 文生图 / 图生图，任一厂商即可。',
         route: routeSelect('PREFERRED_IMAGE_VENDOR', [
           { value: 'fal', label: 'Fal.ai' },
+          { value: 'thehiveai', label: 'TheHive AI · Flux Schnell' },
+          { value: 'merge', label: 'Merge AI Gateway' },
+          { value: 'vercel', label: 'Vercel AI Gateway' },
           { value: 'gpt-image-2', label: 'OpenAI gpt-image' },
           { value: 'nano-banana', label: 'Gemini Nano Banana' },
           { value: 'image-01', label: 'MiniMax' },
@@ -125,6 +128,32 @@ export const SETTINGS_CATEGORIES: readonly SettingsCategory[] = [
             modelText('GEMINI_IMAGE_MODEL', '生图模型', 'gemini-3.1-flash-image'),
           ] },
           falPage('image'),
+          { key: 'image/thehiveai', vendor: 'thehiveai', title: 'TheHive AI',
+            note: 'TheHive AI flux-schnell-enhanced 极速生图，支持单 API Key 或 Key Pool 多 Key 轮询。',
+            fields: [
+              secret('HIVE_API_KEY', 'API Key'),
+              text('HIVE_BASE_URL', 'Base URL', '默认 https://api.thehive.ai/api/v3/hive/flux-schnell-enhanced'),
+              modelText('HIVE_IMAGE_MODEL', '生图模型', 'flux-schnell-enhanced'),
+            ] },
+          { key: 'image/merge', vendor: 'merge', title: 'Merge AI Gateway',
+            note: 'Merge AI Gateway (OpenAI 兼容生图接口)，用于高质量 Header/Hero 图片，支持单 API Key 或 Key Pool 轮询。',
+            fields: [
+              secret('MERGE_GATEWAY_API_KEY', 'API Key'),
+              text('MERGE_GATEWAY_BASE_URL', 'Base URL', '默认 https://api-gateway.merge.dev/v1/images/generations'),
+              modelText('MERGE_GATEWAY_IMAGE_MODEL', '生图模型', 'openai/gpt-image-2.5-sunburst'),
+            ] },
+          { key: 'image/vercel', vendor: 'vercel', title: 'Vercel AI Gateway',
+            note: 'Vercel AI Gateway (OpenAI 兼容生图接口)，支持单 API Key 或 Key Pool 轮询。包含 Seedream 5.0 Pro、Recraft v4.1、Flux 2 Max 等模型。',
+            fields: [
+              secret('VERCEL_IMAGE_KEY', 'API Key'),
+              text('VERCEL_IMAGE_BASE_URL', 'Base URL', '默认 https://ai-gateway.vercel.sh/v1/images/generations'),
+              modelPicker('VERCEL_IMAGE_MODEL', '生图模型', 'bytedance/seedream-5.0-pro', [
+                'bytedance/seedream-5.0-pro',
+                'recraft/recraft-v4.1',
+                'bytedance/seedream-4.0',
+                'bfl/flux-2-max',
+              ]),
+            ] },
           minimaxPage('image', modelPicker('MINIMAX_IMAGE_MODEL', '生图模型', 'image-01', ['image-01', 'image-01-live'])),
           { key: 'image/wavespeed', vendor: 'wavespeed', title: 'WaveSpeed', fields: [
             secret('WAVESPEED_API_KEY', 'API Key'),
@@ -377,7 +406,8 @@ export function vendorConfigured(
   }
   const secrets = page.fields.filter((f) => f.kind === 'secret');
   if (secrets.length === 0) return page.fields.some((f) => Boolean(status.keys[f.name]?.configured));
-  return secrets.every((f) => Boolean(status.keys[f.name]?.configured));
+  return secrets.every((f) => Boolean(status.keys[f.name]?.configured))
+    || Boolean(status.keyPools?.[page.vendor]?.totalKeys);
 }
 /** Determination of configured capability group: LLM and proxy are page-backed; others use server capability flags. */
 export function groupConfigured(

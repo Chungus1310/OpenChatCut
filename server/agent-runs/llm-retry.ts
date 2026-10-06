@@ -1,5 +1,6 @@
 import { APICallError, NoOutputGeneratedError } from 'ai';
 import { pushRunEvent, type ServerRun } from './store';
+import { shouldFailover } from '../key-pool.ts';
 
 /**
  * Provider-neutral failure classification for server-run LLM turns.
@@ -34,7 +35,7 @@ const RETRYABLE_CODES: ReadonlySet<LlmFailureCode> = new Set([
   'EMPTY_RESPONSE',
 ]);
 
-const QUOTA_BODY_PATTERN = /insufficient_quota|quota exceeded|balance.*(not enough|insufficient)/i;
+const QUOTA_BODY_PATTERN = /insufficient_quota|quota exceeded|balance.*(not enough|insufficient)|credit.*(exhaust|insufficient)|billing.*(exhaust|insufficient)/i;
 const CONTEXT_BODY_PATTERN = /maximum context length|context length|tokens.*exceed/i;
 
 export const MAX_LLM_ATTEMPTS = 3; // 1 initial call + 2 retries
@@ -150,7 +151,7 @@ export async function runServerTurnWithRetry<T>(
     try {
       return await attempt();
     } catch (error) {
-      if (signal.aborted) throw error;
+      if (signal.aborted || !shouldFailover(error)) throw error;
       const failure = classifyLlmFailure(error);
       if (!isRetryableLlmFailure(failure.code) || call === MAX_LLM_ATTEMPTS - 1) {
         throw error;

@@ -52,10 +52,22 @@ export interface SettingsCategory {
 }
 
 export interface KeyState { configured: boolean; source: 'env' | 'runtime' | 'none'; }
+
+export interface KeyPoolSummary {
+  provider: string;
+  totalKeys: number;
+  workingCount: number;
+  rateLimitedCount: number;
+  failedCount: number;
+  currentIndex: number;
+  statuses: Array<'untested' | 'working' | 'rate-limited' | 'failed'>;
+}
+
 export interface KeyStatusResponse {
   keys: Record<string, KeyState>;
   caps: Record<string, boolean>;
   models: Record<string, string>;
+  keyPools?: Record<string, KeyPoolSummary>;
   /** Set by the save response when the change only lands on the next launch
    *  (project storage folder: the runtime profile resolves at startup). */
   restartRequired?: boolean;
