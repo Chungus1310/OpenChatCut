@@ -81,7 +81,11 @@ async function extractArchive(archive, outDir) {
   const { promisify } = await import('node:util');
   const run = promisify(execFile);
   if (archive.endsWith('.zip')) {
-    await run('unzip', ['-q', archive, '-d', outDir]);
+    try {
+      await run('unzip', ['-q', archive, '-d', outDir]);
+    } catch {
+      await run('tar', ['-xf', archive, '-C', outDir]);
+    }
   } else {
     await run('tar', ['-xzf', archive, '-C', outDir]);
   }
