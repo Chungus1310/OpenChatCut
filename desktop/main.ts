@@ -77,6 +77,9 @@ import {
   installWindowsGpuCrashRecovery,
   installWindowsRendererRecovery,
 } from './window-recovery.ts';
+import { initDesktopLogger } from './desktop-logger.ts';
+
+initDesktopLogger();
 
 // Electron main process entry. dev mode: esbuild hits desktop-dist/main.mjs,dist/ in the codebase root;
 // Packaging form: dist/, resonance-bundle, chrome-headless-shell use extraResources.
@@ -452,6 +455,23 @@ app.on('window-all-closed', () => app.quit());
 
 const hasSingleInstanceLock = requestProfileScopedSingleInstanceLock(app, runtimeProfile());
 if (!hasSingleInstanceLock) {
+  console.warn(`[desktop] Single-instance lock could not be acquired (PID ${process.pid}). Another OpenChatCut instance is already running.`);
+  if (!SMOKE) {
+    try {
+      dialog.showErrorBox(
+        'OpenChatCut 已在运行 / Already Running',
+        [
+          '检测到已有 OpenChatCut 实例在后台运行。',
+          'Another instance of OpenChatCut is already running in the background.',
+          '',
+          '如果主窗口没有显示，请在 Windows 任务管理器中结束现有的 OpenChatCut 进程后重试。',
+          'If the main window did not appear, close existing OpenChatCut processes in Task Manager and restart.',
+        ].join('\n'),
+      );
+    } catch {
+      // Best-effort dialog
+    }
+  }
   app.quit();
 } else {
   applyWindowsGpuCrashFallback(app);

@@ -16,6 +16,10 @@
 // work inside the application bundle no longer happens before the first tick.
 import { app, dialog } from 'electron';
 import { RUNTIME_ASSET_ADVICE } from './runtime-preflight.ts';
+import { initDesktopLogger } from './desktop-logger.ts';
+
+// Initialize persistent file logger early before bundle imports
+initDesktopLogger();
 
 // Remotion renders export frames inside this process (main + headless tabs).
 // Raise the V8 heap ceiling so large/4K exports don't die with "out of memory"
