@@ -152,7 +152,7 @@ export function VisionModelPane(): React.JSX.Element {
                     {providerChoices.length === 0 && <option value="">{t('无可用厂商（请先配置 API Key）')}</option>}
                     {providerChoices.map((entry) => (
                       <option key={entry.provider} value={entry.provider}>
-                        {PROVIDER_LABELS[entry.provider]}
+                        {t(PROVIDER_LABELS[entry.provider])}
                       </option>
                     ))}
                   </select>

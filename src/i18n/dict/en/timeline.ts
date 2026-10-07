@@ -263,4 +263,8 @@ export default {
   '转场菜单': 'Transition menu',
   '{n} 秒': '{n}s',
   '删除转场': 'Remove transition',
+  '锁定轨道': 'Lock track',
+  '微移所选片段': 'Nudge selected clip',
+  '粘贴片段效果': 'Paste clip effects',
+  '竖屏': 'Vertical',
 } as Record<string, string>;

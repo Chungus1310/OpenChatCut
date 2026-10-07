@@ -36,8 +36,8 @@ try {
   console.error('[desktop] failed to load the application bundle:', detail);
   if (process.env.CC_SMOKE !== '1') {
     try {
-      dialog.showErrorBox('OpenChatCut 启动失败 / failed to start', [
-        '无法加载程序主体 / could not load the application bundle:',
+      dialog.showErrorBox('OpenChatCut Failed to Start', [
+        'Could not load the application bundle:',
         '',
         error instanceof Error ? error.message : String(error),
         '',

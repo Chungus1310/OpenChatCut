@@ -13,10 +13,10 @@ interface KeyPoolEditorProps {
 }
 
 const statusColors: Record<string, { bg: string; text: string; label: string; icon: string }> = {
-  working: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', label: '正常', icon: '●' },
-  'rate-limited': { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308', label: '限流', icon: '▲' },
-  failed: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', label: '异常', icon: '✕' },
-  untested: { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', label: '待测', icon: '○' },
+  working: { bg: 'rgba(34, 197, 94, 0.15)', text: '#22c55e', label: 'Operational', icon: '●' },
+  'rate-limited': { bg: 'rgba(234, 179, 8, 0.15)', text: '#eab308', label: 'Rate-limited', icon: '▲' },
+  failed: { bg: 'rgba(239, 68, 68, 0.15)', text: '#ef4444', label: 'Failed', icon: '✕' },
+  untested: { bg: 'rgba(148, 163, 184, 0.15)', text: '#94a3b8', label: 'Untested', icon: '○' },
 };
 
 function parseKeysFromStaged(raw?: string): string[] {

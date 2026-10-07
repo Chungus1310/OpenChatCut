@@ -415,3 +415,4 @@ export default {
   '音乐生成': 'Music',
   '音效生成': 'Sound effect generation',
 } as Record<string, string>;
+

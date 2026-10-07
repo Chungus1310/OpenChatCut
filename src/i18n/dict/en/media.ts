@@ -233,4 +233,6 @@ export default {
   '上一条': 'Previous',
   '下一条': 'Next',
   '暂无文字稿': 'No transcript yet',
+  '素材「{name}」已存在。覆盖会同步替换已在时间线中使用的该素材。': 'Asset "{name}" already exists. Overwriting will also replace this asset wherever it is used on the timeline.',
 } as Record<string, string>;
+

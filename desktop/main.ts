@@ -152,7 +152,7 @@ function registerDesktopHandlers(trustedOrigin: string): void {
       ? requestedPath
       : app.getPath('videos');
     const options: OpenDialogOptions = {
-      title: '选择素材保存目录',
+      title: 'Choose Media Save Directory',
       defaultPath: requested,
       properties: ['openDirectory', 'createDirectory'],
     };
@@ -169,7 +169,7 @@ function registerDesktopHandlers(trustedOrigin: string): void {
   ipcMain.handle('openchatcut:select-export-directory', trustedDesktopHandler(trustedOrigin, async (event) => {
     const parent = BrowserWindow.fromWebContents(event.sender);
     const options: OpenDialogOptions = {
-      title: '选择导出目录',
+      title: 'Select Export Directory',
       defaultPath: app.getPath('videos'),
       properties: ['openDirectory', 'createDirectory'],
     };
@@ -178,7 +178,7 @@ function registerDesktopHandlers(trustedOrigin: string): void {
       : await dialog.showOpenDialog(options);
     if (result.canceled || !result.filePaths[0]) return null;
     const directory = await validatedDirectory(result.filePaths[0]);
-    if (!directory) throw new Error('所选导出目录不可用');
+    if (!directory) throw new Error('Selected export directory is unavailable');
     const grant = createExportDirectoryGrant(directory);
     activeExportDirectory = { directory, grant };
     await persistExportDirectory(exportStatePath, directory, grant.grantId);
@@ -193,7 +193,7 @@ function registerDesktopHandlers(trustedOrigin: string): void {
     }
     const parent = BrowserWindow.fromWebContents(event.sender);
     const options: SaveDialogOptions = {
-      title: '选择导出文件',
+      title: 'Select Export File',
       defaultPath: join(app.getPath('videos'), suggestedFilename),
     };
     const result = parent
@@ -201,9 +201,9 @@ function registerDesktopHandlers(trustedOrigin: string): void {
       : await dialog.showSaveDialog(options);
     if (result.canceled || !result.filePath) return null;
     const filename = basename(result.filePath);
-    if (!validDesktopExportFilename(filename)) throw new Error('导出文件名无效');
+    if (!validDesktopExportFilename(filename)) throw new Error('Invalid export filename');
     const directory = await validatedDirectory(dirname(result.filePath));
-    if (!directory) throw new Error('所选导出目录不可用');
+    if (!directory) throw new Error('Selected export directory is unavailable');
     const grant = createExportDirectoryGrant(directory);
     activeExportDirectory = { directory, grant };
     await persistExportDirectory(exportStatePath, directory, grant.grantId);
@@ -244,7 +244,7 @@ function registerDesktopHandlers(trustedOrigin: string): void {
       minWidth: 300,
       minHeight: 220,
       backgroundColor: '#16161a',
-      title: '文字稿',
+      title: 'Transcript',
       show: false,
       webPreferences: {
         preload: PRELOAD_PATH,
@@ -381,7 +381,7 @@ async function boot(): Promise<void> {
       chooseRoot: async (requestedPath) => {
         const parent = BrowserWindow.fromWebContents(event.sender);
         const options: OpenDialogOptions = {
-          title: '选择允许 Agent 访问的素材文件夹',
+          title: 'Select Media Folder for Agent Access',
           defaultPath: agentImportPickerDefaultPath(requestedPath),
           properties: ['openDirectory'],
         };
@@ -459,12 +459,10 @@ if (!hasSingleInstanceLock) {
   if (!SMOKE) {
     try {
       dialog.showErrorBox(
-        'OpenChatCut 已在运行 / Already Running',
+        'OpenChatCut Already Running',
         [
-          '检测到已有 OpenChatCut 实例在后台运行。',
           'Another instance of OpenChatCut is already running in the background.',
           '',
-          '如果主窗口没有显示，请在 Windows 任务管理器中结束现有的 OpenChatCut 进程后重试。',
           'If the main window did not appear, close existing OpenChatCut processes in Task Manager and restart.',
         ].join('\n'),
       );
@@ -494,7 +492,7 @@ if (hasSingleInstanceLock) {
       // A packaged double-click has no console: without this the process just
       // disappears and the user has nothing to report (issue #140).
       try {
-        dialog.showErrorBox('OpenChatCut 启动失败 / failed to start', detail);
+        dialog.showErrorBox('OpenChatCut Failed to Start', detail);
       } catch {
         // A dialog is best effort; the exit below still has to happen.
       }

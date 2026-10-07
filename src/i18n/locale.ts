@@ -22,26 +22,14 @@ const DOCUMENT_LANG: Record<Locale, string> = {
   ru: 'ru',
 };
 
-function systemLocale(): Locale {
-  try {
-    const tag = String(navigator.language ?? '').toLowerCase();
-    if (tag.startsWith('zh')) return 'zh';
-    if (tag.startsWith('it')) return 'it';
-    if (tag.startsWith('ru')) return 'ru';
-    return 'en';
-  } catch {
-    return 'en';
-  }
-}
-
 function readInitial(): Locale {
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored === 'zh' || stored === 'en' || stored === 'it' || stored === 'ru') return stored;
   } catch {
-    // Private mode / storage disabled → system language below.
+    // Private mode / storage disabled → English fallback.
   }
-  return systemLocale();
+  return 'en';
 }
 
 let current: Locale = readInitial();

@@ -607,4 +607,45 @@ export default {
   '桌面端点击“选择目录”；也可手动输入绝对路径（可用 ~/ 开头）。清除后回到默认目录。': 'On desktop, click "Choose folder"; you can also type an absolute path (~/ accepted). Clear it to return to the default folder.',
   '已保存 · 重启应用后新的工程存储目录才会生效': 'Saved · the new project storage folder takes effect after a restart',
   '该模型不在内置目录，以上数值为估算（上下文 {context} / 输出 {output}）。若与实际不符，点「展开」手动修改。': 'This model is not in the built-in catalog, so these values are estimates (context {context} / output {output}). If they do not match the real model, expand and adjust them manually.',
+
+  // ── KeyPoolEditor ──
+  '多 Key 智能轮换与容灾池': 'Multi-Key Smart Rotation & Failover Pool',
+  '{n} 个 Key': '{n} Keys',
+  '单 Key 模式': 'Single Key Mode',
+  '管理池': 'Manage Pool',
+  '配置多个 API Key 可以在遇到 429 限流或额度告警时自动平滑转移。采用粘性选择（Sticky Selection）优先复用工作 Key 以保持服务端的 Prompt Cache 热度，并在流式输出已产生后提供防重复计费保护。':
+    'Configuring multiple API Keys enables automatic seamless failover on 429 rate limits or quota errors. Sticky selection reuses working keys to maintain prompt cache warmth, with idempotency protection once streaming starts.',
+  '当前活跃 (Sticky)': 'Currently Active (Sticky)',
+  '正常': 'Operational',
+  '限流': 'Rate-limited',
+  '异常': 'Failed',
+  '待测': 'Untested',
+  '已持久化': 'Persisted',
+  '删除此 Key': 'Delete this key',
+  '暂无多 Key 配置（当前使用上方默认单 Key）': 'No multi-key pool configured (currently using the default single key above)',
+  '添加一个或多个 API Key（支持逗号或换行分隔）': 'Add one or more API Keys (comma or newline separated)',
+  '加入池': 'Add to Pool',
+  '隐藏明文': 'Hide values',
+  '清空轮换池': 'Clear Pool',
+  'API Key 轮换池': 'API Key Pool',
+
+  // ── New image generation providers ──
+  'TheHive AI flux-schnell-enhanced 极速生图，支持单 API Key 或 Key Pool 多 Key 轮询。':
+    'TheHive AI flux-schnell-enhanced ultra-fast image generation, supporting single API key or key pool rotation.',
+  '默认 https://api.thehive.ai/api/v3/hive/flux-schnell-enhanced':
+    'Default https://api.thehive.ai/api/v3/hive/flux-schnell-enhanced',
+  'Merge AI Gateway (OpenAI 兼容生图接口)，用于高质量 Header/Hero 图片，支持单 API Key 或 Key Pool 轮询。':
+    'Merge AI Gateway (OpenAI-compatible image API) for high-fidelity Header/Hero images, supporting single key or key pool rotation.',
+  '默认 https://api-gateway.merge.dev/v1/images/generations':
+    'Default https://api-gateway.merge.dev/v1/images/generations',
+  'Vercel AI Gateway (OpenAI 兼容生图接口)，支持单 API Key 或 Key Pool 轮询。包含 Seedream 5.0 Pro、Recraft v4.1、Flux 2 Max 等模型。':
+    'Vercel AI Gateway (OpenAI-compatible image API), supporting single key or key pool rotation. Includes Seedream 5.0 Pro, Recraft v4.1, Flux 2 Max and more.',
+  '默认 https://ai-gateway.vercel.sh/v1/images/generations':
+    'Default https://ai-gateway.vercel.sh/v1/images/generations',
+  'xAI (订阅登录)': 'xAI (Subscription Login)',
+  Operational: 'Operational',
+  'Rate-limited': 'Rate-limited',
+  Failed: 'Failed',
+  Untested: 'Untested',
 } as Record<string, string>;
+

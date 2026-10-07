@@ -199,4 +199,6 @@ export default {
   '正在生成草稿…': 'Creating draft…',
   '自定义路径': 'Custom path',
   '草稿库路径': 'Draft store path',
+  '切换 WebCodecs…': 'Switching to WebCodecs…',
 } as Record<string, string>;
+
